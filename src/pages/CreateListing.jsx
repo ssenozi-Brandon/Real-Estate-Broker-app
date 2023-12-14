@@ -74,13 +74,13 @@ function CreateListing() {
     toast.error('Discounted price should be less than the Regular price')
    }
 
-  //  console.log(images.length);
-  //  if(images.length >= 6){
-  //   setLoading(false)
-  //   // console.log(formData)
-  //   toast.error("images max-6")
-  //   return
-  //  }
+   console.log(images.length);
+   if(images.length >= 6){
+    setLoading(false)
+    // console.log(formData)
+    toast.error("images max-6")
+    return
+   }
 
   //  store images
   const storeImage = async (image)=>{
@@ -154,11 +154,12 @@ function CreateListing() {
     }
     
     // text/booleans/numbers
-     if (!e.target.file){
+     if (!e.target.files){
       setFormData((prevState)=>({
         ...prevState,
         [e.target.id]: boolean ?? e.target.value
       }))
+      setLoading(false)
      }
   }
 
