@@ -6,6 +6,7 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from 'firebase/storage'
+import { addDoc,collection,serverTimestamp } from "firebase/firestore"
 import {db} from '../firebase.config'
 import { useNavigate } from "react-router-dom"
 import {v4 as uuidv4} from 'uuid'
@@ -22,7 +23,7 @@ function CreateListing() {
     bathrooms: 1,
     parking: false,
     furnished: false,
-    address: '',
+    location: '',
     offer: false,
     regularPrice: 0,
     discountedPrice: 0,
@@ -36,7 +37,7 @@ function CreateListing() {
     bathrooms,
     parking,
     furnished,
-    address,
+    location,
     offer,
     regularPrice,
     discountedPrice,
@@ -118,6 +119,7 @@ function CreateListing() {
         }
       )
     })
+
   }
 
 
@@ -129,9 +131,22 @@ function CreateListing() {
     return
   })
 
-  console.log(imageUrls)
+  const formDataCopy = {
+    ...formData,
+    imageUrls,
+    timestamp: serverTimestamp(),
+  }
 
+  delete formDataCopy.images
+  !formDataCopy.offer && delete formDataCopy.discountedPrice
+
+  const docRef = await addDoc(collection(db,'listings'),formDataCopy)
+
+  toast.success('lisitng saved')
+  navigate(`/category/${formDataCopy.type}/${docRef.id}`)
+  setLoading(false)
 }
+
 
   // handleMutate function
   const onMutate = (e)=>{
@@ -159,7 +174,6 @@ function CreateListing() {
         ...prevState,
         [e.target.id]: boolean ?? e.target.value
       }))
-      setLoading(false)
      }
   }
 
@@ -297,8 +311,8 @@ function CreateListing() {
           <textarea
             className='formInputAddress'
             type='text'
-            id='address'
-            value={address}
+            id='location'
+            value={location}
             onChange={onMutate}
             required
           />
