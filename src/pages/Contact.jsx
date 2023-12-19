@@ -57,6 +57,7 @@ function Contact() {
            </form>
         </main>
       )}
+      <ToastContainer/>
     </div>
   )
 }
