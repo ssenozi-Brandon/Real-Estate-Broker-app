@@ -7,6 +7,7 @@ import { ToastContainer, toast } from "react-toastify"
 function Contact() {
   const [message,setMessage] = useState()
   const [landlord, setLandLord] = useState()
+   // eslint-disable-next-line
   const [searchParams, setSearchParams] = useSearchParams();
    
   const params = useParams()

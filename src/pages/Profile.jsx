@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { getAuth,updateProfile } from "firebase/auth";
-import { updateDoc, doc } from "firebase/firestore";
+import { updateDoc, doc,collection,getDocs,query,where,orderBy, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase.config";
 import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer,toast } from "react-toastify";
+import ListingItem from "../components/ListingItem";
 import 'react-toastify/dist/ReactToastify.css';
 import arrowRight from '../assets/svg/keyboardArrowRightIcon.svg'
 import homeIcon from '../assets/svg/homeIcon.svg'
@@ -11,6 +12,10 @@ import homeIcon from '../assets/svg/homeIcon.svg'
 
 function Profile() {
   const auth = getAuth();
+  // eslint-disable-next-line
+  const [loading,setLoading] = useState(false)
+  // eslint-disable-next-line
+  const [listings , setListings] = useState(null)
   const [changeDetails,setChangeDetails] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -18,17 +23,46 @@ function Profile() {
   });
 
   const {name,email} = formData
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchUserListings = async ()=>{
+     const listingsRef = collection(db,'listings')
+     const q = query(listingsRef,where('userRef','==',auth.currentUser.uid),orderBy('timestamp','desc'))
+
+     const querSnap = await getDocs(q)
+     
+     let listings = [];
+     querSnap.forEach((doc)=>{
+      return listings.push({
+        id: doc.id,
+        data: doc.data(),
+      })
+     })
+
+      setListings(listings)
+     setLoading(false)
+    }
+
     if (auth.currentUser) {
       setFormData({
         name: auth.currentUser.displayName || "",
         email: auth.currentUser.email || ""
       });
     }
-    // eslint-disable-next-line
-  }, [auth.currentUser]); 
 
+    fetchUserListings()
+    // eslint-disable-next-line
+  }, [auth.currentUser,auth.currentUser.uid]); 
+
+  
+  
+  
+  const onLogout = () => {
+    auth.signOut();
+    navigate('/sign-in');
+  };
+  
   const onChange = (e) => {
     setFormData((prevState)=>({
     ...prevState,
@@ -37,14 +71,18 @@ function Profile() {
     )
   }
 
+  const onDelete =  async (listingId)=>{
+    if(window.confirm('Are you sure you want to Delete?')){
+      await deleteDoc(doc(db,'listings',listingId))
+      const updatedListings =  listings.filter((listing)=>listing.id !== listingId)
+      setListings(updatedListings)
+      toast.success('Listing deleted Successfully')
+    }
+  }
 
-  const navigate = useNavigate();
-
-  const onLogout = () => {
-    auth.signOut();
-    navigate('/sign-in');
-  };
+  const onEdit = (listingId)=> navigate(`/edit-listing/${listingId}`)
   
+
   const noMatch = () =>{
     // Redirect to login page if not authenticated
     navigate('/sign-in');
@@ -119,6 +157,23 @@ function Profile() {
           <p>Sell or Rent your home</p>
           <img src={arrowRight} alt="arrow right" />
         </Link>
+
+        {!loading && listings?.length > 0 && (
+          <>
+          <p className="listingText">Your Listings</p>
+          <ul className="listingsList">
+            {listings.map((listing)=>(
+             <ListingItem
+              key={listing.id} 
+              listing={listing.data} 
+              id={listing.id}
+              onDelete={()=> onDelete(listing.id)}
+              onEdit={()=> onEdit(listing.id)}
+              />
+            ))}
+          </ul>
+          </>
+        )}
       </main>
       <ToastContainer/>
     </div>
